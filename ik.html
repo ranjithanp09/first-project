@@ -1,0 +1,806 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmartWaste AI</title>
+
+<style>
+:root {
+  --green: #216442;
+  --dark: #153e2b;
+  --background: #f2f6f1;
+  --text: #20352b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+header {
+  background: var(--dark);
+  color: white;
+  text-align: center;
+  padding: 25px 15px;
+}
+
+main {
+  max-width: 1000px;
+  margin: auto;
+  padding: 18px;
+}
+
+section {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  box-shadow: 0 3px 12px #0000000b;
+}
+
+h2 { color: var(--green); }
+
+button {
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 8px 4px 8px 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input, select {
+  padding: 10px;
+  margin: 8px 0;
+  max-width: 100%;
+}
+
+#preview {
+  display: none;
+  width: 240px;
+  max-width: 100%;
+  border-radius: 10px;
+  margin-top: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.stat {
+  background: #e7f2e9;
+  padding: 16px;
+  border-radius: 10px;
+}
+
+.stat strong {
+  display: block;
+  font-size: 27px;
+  margin-top: 8px;
+}
+
+.result {
+  background: #f3f8f3;
+  padding: 14px;
+  border-radius: 10px;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+
+.small {
+  font-size: 13px;
+  color: #617166;
+  line-height: 1.5;
+}
+
+li {
+  margin: 9px 0;
+  overflow-wrap: anywhere;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>♻️ SmartWaste AI</h1>
+  <p>Intelligent Waste Recognition and Circular Economy</p>
+</header>
+
+<main>
+
+<section>
+  <h2>1. AI Waste Recognition</h2>
+
+  <p>Upload a clear photo showing one waste item.</p>
+
+  <input type="file" id="imageInput" accept="image/*">
+  <br>
+
+  <img id="preview" alt="Uploaded waste item">
+
+  <p id="modelStatus">Loading AI model...</p>
+  <p id="visionStatus">Choose an image to begin.</p>
+
+  <div id="predictionList"></div>
+
+  <div class="result">
+    <b>Suggested category:</b>
+    <p id="resultCategory">Waiting for an image.</p>
+    <p id="resultAdvice"></p>
+  </div>
+
+  <button id="recordPredictionButton" disabled>
+    Record suggestion after verification
+  </button>
+
+  <p class="small">
+    The AI compares your image with descriptions of waste categories.
+    It can make mistakes. Scores are relative matching scores, not
+    verified probabilities. Never rely on a photo to identify unknown
+    chemicals or determine battery safety.
+  </p>
+</section>
+
+<section>
+  <h2>2. Manually Record a Verified Material</h2>
+
+  <label for="materialInput">Select material:</label>
+  <br>
+
+  <select id="materialInput">
+    <option value="paper">Paper</option>
+    <option value="cardboard">Cardboard</option>
+    <option value="plastic">Plastic</option>
+    <option value="metal">Metal</option>
+    <option value="glass">Glass</option>
+    <option value="vegetable">Vegetable / Food Waste</option>
+    <option value="battery">Battery</option>
+    <option value="electronics">Electronic Waste</option>
+    <option value="chemical">Unknown Chemical / Hazardous Waste</option>
+    <option value="textile">Cloth / Textile</option>
+    <option value="other">Other / Unidentified</option>
+  </select>
+
+  <br>
+  <label for="quantityInput">Quantity:</label>
+  <br>
+  <input type="number" id="quantityInput" min="1" step="1" value="1">
+  <br>
+
+  <button id="recordButton">Record Material</button>
+</section>
+
+<section>
+  <h2>3. Digital Twin — Material Flow</h2>
+
+  <div class="grid">
+    <div class="stat">
+      Items Recorded
+      <strong id="totalItems">0</strong>
+    </div>
+
+    <div class="stat">
+      Material Groups
+      <strong id="totalTypes">0</strong>
+    </div>
+
+    <div class="stat">
+      Potential Recovery
+      <strong id="recoveryItems">0</strong>
+    </div>
+
+    <div class="stat">
+      Special Handling
+      <strong id="specialItems">0</strong>
+    </div>
+  </div>
+
+  <h3>Material Journey</h3>
+  <ol id="materialFlow">
+    <li>No materials recorded yet.</li>
+  </ol>
+
+  <button id="exportButton">Export Records as CSV</button>
+</section>
+
+<section>
+  <h2>4. Personalized Recommendations</h2>
+
+  <label for="facilityInput">Facility:</label>
+  <br>
+
+  <select id="facilityInput">
+    <option value="home">Home / Apartment</option>
+    <option value="campus">College / Campus</option>
+    <option value="community">Community Recycling Centre</option>
+  </select>
+
+  <br>
+  <label for="goalInput">Goal:</label>
+  <br>
+
+  <select id="goalInput">
+    <option value="reduce">Reduce Waste</option>
+    <option value="reuse">Reuse More</option>
+    <option value="compost">Improve Composting</option>
+    <option value="recycle">Improve Recycling</option>
+  </select>
+
+  <br>
+  <button id="recommendButton">Generate Recommendations</button>
+
+  <ul id="recommendations">
+    <li>Record materials to receive recommendations.</li>
+  </ul>
+
+  <p class="small">
+    These recommendations use rules in the code. A generative AI API
+    has not been connected yet.
+  </p>
+</section>
+
+<section>
+  <h2>5. Circular Economy</h2>
+
+  <div class="grid">
+    <div class="stat">
+      <h3>Reduce</h3>
+      Prevent unnecessary waste.
+    </div>
+
+    <div class="stat">
+      <h3>Reuse</h3>
+      Use suitable items again.
+    </div>
+
+    <div class="stat">
+      <h3>Recycle</h3>
+      Recover accepted materials.
+    </div>
+
+    <div class="stat">
+      <h3>Recover</h3>
+      Send organic waste to suitable composting systems.
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script type="module">
+import {
+  pipeline,
+  env
+} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+
+const get = id => document.getElementById(id);
+
+let classifier = null;
+let imageURL = null;
+let predictions = [];
+let suggestedMaterial = null;
+
+const records = [];
+
+const categories = [
+  {
+    label: "paper waste such as newspaper or sheets of paper",
+    key: "paper"
+  },
+  {
+    label: "cardboard packaging or a corrugated cardboard box",
+    key: "cardboard"
+  },
+  {
+    label: "plastic waste such as a plastic bottle or container",
+    key: "plastic"
+  },
+  {
+    label: "metal waste such as an aluminium can or metal object",
+    key: "metal"
+  },
+  {
+    label: "glass waste such as a glass bottle or jar",
+    key: "glass"
+  },
+  {
+    label: "food scraps or vegetable waste such as fruit peelings",
+    key: "vegetable"
+  },
+  {
+    label: "a used battery or battery cell",
+    key: "battery"
+  },
+  {
+    label: "electronic waste such as a phone or computer",
+    key: "electronics"
+  },
+  {
+    label: "textile waste such as clothing or fabric",
+    key: "textile"
+  },
+  {
+    label: "a chemical container or potentially hazardous waste",
+    key: "chemical"
+  },
+  {
+    label: "general rubbish or mixed non-recyclable waste",
+    key: "other"
+  }
+];
+
+const rules = {
+  paper: [
+    "Recyclable",
+    "Keep paper clean and dry. Check local paper recycling rules."
+  ],
+
+  cardboard: [
+    "Recyclable",
+    "Flatten clean cardboard and check local collection rules."
+  ],
+
+  plastic: [
+    "Potentially recyclable",
+    "Check the plastic type and local facility acceptance."
+  ],
+
+  metal: [
+    "Recyclable",
+    "Separate accepted metals for a recycling facility."
+  ],
+
+  glass: [
+    "Potentially recyclable",
+    "Check local glass collection rules. Contain broken glass safely."
+  ],
+
+  vegetable: [
+    "Biodegradable",
+    "Use an appropriate organic-waste collection or composting service."
+  ],
+
+  battery: [
+    "Special handling",
+    "Do not put batteries in ordinary recycling or compost. Use an authorized collection point."
+  ],
+
+  electronics: [
+    "Special handling",
+    "Take electronic waste to an authorized collection facility."
+  ],
+
+  chemical: [
+    "Potentially hazardous",
+    "Do not touch, open, or mix unknown chemicals. Contact an authorized waste service."
+  ],
+
+  textile: [
+    "Potentially reusable",
+    "Repair, reuse, or donate suitable textiles."
+  ],
+
+  other: [
+    "Unidentified",
+    "Verify the material before deciding how to dispose of it."
+  ]
+};
+
+const destinations = {
+  paper: "Verify local recycling acceptance",
+  cardboard: "Verify local recycling acceptance",
+  plastic: "Verify local recycling acceptance",
+  metal: "Verify local recycling acceptance",
+  glass: "Verify local recycling acceptance",
+  vegetable: "Organic waste collection / composting",
+  battery: "Authorized battery collection",
+  electronics: "Authorized electronic waste collection",
+  chemical: "Hazardous waste service",
+  textile: "Reuse / textile collection review",
+  other: "Manual review required"
+};
+
+// Load an image-text AI model in the browser.
+async function loadModel() {
+  try {
+    get("modelStatus").textContent =
+      "Downloading AI model. The first load may take several minutes.";
+
+    env.allowRemoteModels = true;
+
+    classifier = await pipeline(
+      "zero-shot-image-classification",
+      "Xenova/clip-vit-base-patch32"
+    );
+
+    get("modelStatus").textContent =
+      "AI model ready. Upload a clear image of one item.";
+
+  } catch (error) {
+    console.error(error);
+
+    get("modelStatus").textContent =
+      "AI could not load. Check your internet connection and refresh the page.";
+  }
+}
+
+// Display the model's best matching descriptions.
+function showPredictions() {
+  const box = get("predictionList");
+  box.replaceChildren();
+
+  const heading = document.createElement("h3");
+  heading.textContent = "Top AI matches";
+  box.appendChild(heading);
+
+  const list = document.createElement("ol");
+
+  predictions.slice(0, 5).forEach(item => {
+    const li = document.createElement("li");
+
+    li.textContent =
+      item.label + " — " +
+      (item.score * 100).toFixed(1) +
+      "% relative match";
+
+    list.appendChild(li);
+  });
+
+  box.appendChild(list);
+}
+
+// Show the category and its advice.
+function showCategory(material, source) {
+  const rule = rules[material];
+
+  get("resultCategory").textContent =
+    material + " — " + rule[0] + " (" + source + ")";
+
+  get("resultAdvice").textContent = rule[1];
+}
+
+// When a user uploads an image.
+get("imageInput").addEventListener("change", async () => {
+  const file = get("imageInput").files[0];
+
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    get("visionStatus").textContent = "Choose an image file.";
+    return;
+  }
+
+  if (imageURL) URL.revokeObjectURL(imageURL);
+
+  imageURL = URL.createObjectURL(file);
+
+  const preview = get("preview");
+
+  preview.onload = async () => {
+    preview.style.display = "block";
+
+    predictions = [];
+    suggestedMaterial = null;
+
+    get("recordPredictionButton").disabled = true;
+    get("predictionList").replaceChildren();
+
+    if (!classifier) {
+      get("visionStatus").textContent =
+        "Wait for the model to load, then select your image again.";
+      return;
+    }
+
+    try {
+      get("visionStatus").textContent =
+        "Comparing the image with waste-category descriptions...";
+
+      predictions = await classifier(
+  preview.src,
+  categories.map(item => item.label),
+  { top_k: categories.length }
+);
+      showPredictions();
+
+      const best = predictions[0];
+
+      const match = categories.find(
+        item => item.label === best.label
+      );
+
+      // This threshold is a basic uncertainty safeguard,
+      // not a scientifically validated accuracy threshold.
+      if (!match || best.score < 0.20) {
+        get("resultCategory").textContent =
+          "Uncertain — verify the material manually.";
+
+        get("resultAdvice").textContent =
+          "The AI did not find a sufficiently strong match.";
+
+        get("visionStatus").textContent =
+          "Analysis complete. No category accepted.";
+
+        return;
+      }
+
+      suggestedMaterial = match.key;
+
+      showCategory(
+        suggestedMaterial,
+        "AI suggestion — verify before recording"
+      );
+
+      get("visionStatus").textContent =
+        "Analysis complete. Check the predictions against the actual item.";
+
+      get("recordPredictionButton").disabled = false;
+
+    } catch (error) {
+      console.error(error);
+
+      get("visionStatus").textContent =
+        "Image analysis failed. Try another image or refresh the page.";
+    }
+  };
+
+  preview.onerror = () => {
+    get("visionStatus").textContent =
+      "Could not open the image. Try another JPG or PNG.";
+  };
+
+  preview.src = imageURL;
+});
+
+// Record the AI suggestion only after user confirmation.
+get("recordPredictionButton").addEventListener("click", () => {
+  if (!suggestedMaterial) return;
+
+  if (
+    suggestedMaterial === "battery" ||
+    suggestedMaterial === "chemical"
+  ) {
+    alert(
+      "Do not rely on AI to identify batteries or chemicals. " +
+      "Verify the item through an appropriate qualified person."
+    );
+    return;
+  }
+
+  const confirmed = confirm(
+    "The AI suggests " + suggestedMaterial +
+    ". Have you checked that this category is correct?"
+  );
+
+  if (confirmed) {
+    recordMaterial(
+      suggestedMaterial,
+      1,
+      "AI suggestion, user-confirmed"
+    );
+  }
+});
+
+// Manually record a verified material.
+get("recordButton").addEventListener("click", () => {
+  const material = get("materialInput").value;
+  const quantity = Number(get("quantityInput").value);
+
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    alert("Enter a whole number greater than zero.");
+    return;
+  }
+
+  recordMaterial(
+    material,
+    quantity,
+    "Manually entered / verified"
+  );
+});
+
+// Save a material to the digital twin.
+function recordMaterial(material, quantity, source) {
+  const rule = rules[material];
+
+  records.push({
+    date: new Date().toLocaleString(),
+    material: material,
+    quantity: quantity,
+    group: rule[0],
+    status: "Awaiting collection",
+    destination: destinations[material],
+    source: source
+  });
+
+  showCategory(material, source);
+
+  updateDashboard();
+}
+
+// Update the material flow dashboard.
+function updateDashboard() {
+  get("totalItems").textContent =
+    records.reduce((sum, item) => sum + item.quantity, 0);
+
+  get("totalTypes").textContent =
+    new Set(records.map(item => item.material)).size;
+
+  get("recoveryItems").textContent =
+    records
+      .filter(item =>
+        [
+          "Recyclable",
+          "Potentially recyclable",
+          "Potentially reusable"
+        ].includes(item.group)
+      )
+      .reduce((sum, item) => sum + item.quantity, 0);
+
+  get("specialItems").textContent =
+    records
+      .filter(item =>
+        [
+          "Special handling",
+          "Potentially hazardous"
+        ].includes(item.group)
+      )
+      .reduce((sum, item) => sum + item.quantity, 0);
+
+  const flow = get("materialFlow");
+  flow.replaceChildren();
+
+  records.slice().reverse().forEach(item => {
+    const li = document.createElement("li");
+
+    li.textContent =
+      item.material + " × " + item.quantity +
+      " → " + item.destination +
+      " → " + item.status +
+      " (" + item.source + ")";
+
+    flow.appendChild(li);
+  });
+}
+
+// Generate rule-based recommendations.
+get("recommendButton").addEventListener("click", () => {
+  const goal = get("goalInput").value;
+  const facility = get("facilityInput").value;
+
+  const suggestions = [];
+
+  if (records.length === 0) {
+    suggestions.push(
+      "Record verified materials to receive more relevant guidance."
+    );
+  }
+
+  if (records.some(item => item.material === "vegetable")) {
+    suggestions.push(
+      "Separate food scraps for suitable composting or organic-waste collection."
+    );
+  }
+
+  if (records.some(item =>
+    ["battery", "electronics", "chemical"].includes(item.material)
+  )) {
+    suggestions.push(
+      "Keep special-handling items separate and use an authorized service."
+    );
+  }
+
+  if (goal === "reuse") {
+    suggestions.push(
+      "Check whether clean containers, paper and textiles can be reused."
+    );
+  }
+
+  if (goal === "compost") {
+    suggestions.push(
+      "Check whether your facility accepts food and garden waste."
+    );
+  }
+
+  if (goal === "recycle") {
+    suggestions.push(
+      "Confirm local recycling rules before placing an item in a recycling bin."
+    );
+  }
+
+  if (goal === "reduce") {
+    suggestions.push(
+      "Choose durable products and avoid unnecessary single-use packaging."
+    );
+  }
+
+  if (facility === "campus") {
+    suggestions.push(
+      "Ask your campus to provide clearly labelled sorting and collection points."
+    );
+  } else if (facility === "community") {
+    suggestions.push(
+      "Find authorized local recyclers and collection centres."
+    );
+  } else {
+    suggestions.push(
+      "Keep different household materials in separate labelled containers."
+    );
+  }
+
+  const output = get("recommendations");
+  output.replaceChildren();
+
+  suggestions.forEach(text => {
+    const li = document.createElement("li");
+    li.textContent = text;
+    output.appendChild(li);
+  });
+});
+
+// Export the records to a CSV spreadsheet.
+get("exportButton").addEventListener("click", () => {
+  if (records.length === 0) {
+    alert("Record some materials first.");
+    return;
+  }
+
+  const headers = [
+    "Date",
+    "Material",
+    "Quantity",
+    "Category",
+    "Status",
+    "Destination",
+    "Source"
+  ];
+
+  const rows = records.map(item => [
+    item.date,
+    item.material,
+    item.quantity,
+    item.group,
+    item.status,
+    item.destination,
+    item.source
+  ]);
+
+  const csv = [headers, ...rows]
+    .map(row =>
+      row.map(value =>
+        '"' + String(value).replace(/"/g, '""') + '"'
+      ).join(",")
+    )
+    .join("\n");
+
+  const url = URL.createObjectURL(
+    new Blob([csv], { type: "text/csv;charset=utf-8;" })
+  );
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "smartwaste-material-flow.csv";
+  link.click();
+
+  URL.revokeObjectURL(url);
+});
+
+// Start loading the AI model.
+loadModel();
+</script>
+
+</body>
+</html>
